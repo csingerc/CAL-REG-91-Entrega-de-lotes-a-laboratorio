@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAL-REG-91 | Entrega de Muestras a Laboratorio</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3250;
+    --accent-cal: #3b82f6;
+    --accent-lab: #10b981;
+    --accent-cal-dim: rgba(59,130,246,0.15);
+    --accent-lab-dim: rgba(16,185,129,0.15);
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --success: #10b981;
+    --radius: 10px;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 20px;
+  }
+  .login-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 40px; width: 100%; max-width: 400px;
+  }
+  .login-logo { text-align: center; margin-bottom: 28px; }
+  .login-logo h1 { font-size: 1.1rem; color: var(--text-muted); font-weight: 400; }
+  .login-logo h2 { font-size: 1.3rem; font-weight: 700; margin-top: 4px; }
+  .login-logo .doc-code { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+  .role-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+  .role-btn {
+    padding: 14px; border-radius: var(--radius); border: 2px solid var(--border);
+    background: var(--surface2); cursor: pointer; text-align: center;
+    transition: all 0.2s; color: var(--text);
+  }
+  .role-btn.active-cal { border-color: var(--accent-cal); background: var(--accent-cal-dim); }
+  .role-btn.active-lab { border-color: var(--accent-lab); background: var(--accent-lab-dim); }
+  .role-btn .role-icon { font-size: 1.5rem; margin-bottom: 6px; }
+  .role-btn .role-name { font-size: 0.85rem; font-weight: 600; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input {
+    width: 100%; padding: 10px 14px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text); font-size: 0.95rem; transition: border-color 0.2s;
+  }
+  .form-group input:focus { outline: none; border-color: var(--accent-cal); }
+  .btn-primary {
+    width: 100%; padding: 12px; border-radius: var(--radius); border: none;
+    font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-cal { background: var(--accent-cal); color: white; }
+  .btn-cal:hover { background: #2563eb; }
+  .btn-lab { background: var(--accent-lab); color: white; }
+  .btn-lab:hover { background: #059669; }
+  .login-error { color: var(--danger); font-size: 0.85rem; text-align: center; margin-top: 10px; min-height: 20px; }
+
+  /* APP */
+  #app-screen { display: none; min-height: 100vh; }
+  .topbar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-title { font-size: 0.9rem; font-weight: 600; }
+  .topbar-sub { font-size: 0.75rem; color: var(--text-muted); }
+  .role-badge {
+    padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-cal { background: var(--accent-cal-dim); color: var(--accent-cal); border: 1px solid var(--accent-cal); }
+  .badge-lab { background: var(--accent-lab-dim); color: var(--accent-lab); border: 1px solid var(--accent-lab); }
+  .btn-logout {
+    padding: 6px 14px; border-radius: var(--radius); border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted); cursor: pointer; font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+  .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+  .main-content { padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 10px 20px; cursor: pointer; font-size: 0.9rem; font-weight: 500;
+    color: var(--text-muted); border-bottom: 2px solid transparent; transition: all 0.2s;
+    margin-bottom: -1px;
+  }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent-cal); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* FORM NUEVA ENTREGA */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
+  }
+  .card-title { font-size: 1rem; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-full { grid-column: 1 / -1; }
+  .form-group textarea {
+    width: 100%; padding: 10px 14px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text); font-size: 0.9rem; resize: vertical; min-height: 80px;
+    font-family: inherit;
+  }
+  .form-group textarea:focus { outline: none; border-color: var(--accent-cal); }
+  .btn-submit {
+    padding: 11px 28px; border-radius: var(--radius); border: none;
+    font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .form-actions { margin-top: 20px; display: flex; align-items: center; gap: 12px; }
+  .form-msg { font-size: 0.85rem; }
+  .form-msg.ok { color: var(--success); }
+  .form-msg.err { color: var(--danger); }
+
+  /* TABLA REGISTROS */
+  .filters { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted); cursor: pointer; font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+  .filter-btn.active { background: var(--accent-cal-dim); border-color: var(--accent-cal); color: var(--accent-cal); }
+  .search-input {
+    padding: 6px 14px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; color: var(--text); font-size: 0.85rem; width: 220px;
+  }
+  .search-input:focus { outline: none; border-color: var(--accent-cal); }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th {
+    padding: 10px 14px; text-align: left; color: var(--text-muted);
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:hover td { background: var(--surface2); }
+  tr:last-child td { border-bottom: none; }
+
+  .status-badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600;
+    white-space: nowrap;
+  }
+  .status-pendiente { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+  .status-completo { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+
+  .firma-cell { font-size: 0.8rem; }
+  .firma-user { font-weight: 600; color: var(--text); }
+  .firma-time { color: var(--text-muted); font-size: 0.72rem; margin-top: 2px; }
+  .firma-pending { color: var(--text-muted); font-style: italic; }
+
+  .btn-recibir {
+    padding: 6px 14px; border-radius: var(--radius); border: 1px solid var(--accent-lab);
+    background: var(--accent-lab-dim); color: var(--accent-lab); cursor: pointer;
+    font-size: 0.8rem; font-weight: 600; transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-recibir:hover { background: var(--accent-lab); color: white; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+  .empty-state i { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.4; }
+  .loading { text-align: center; padding: 40px; color: var(--text-muted); }
+
+  /* MODAL CONFIRMACIÓN */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 200; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 32px; max-width: 440px; width: 90%;
+  }
+  .modal h3 { font-size: 1.1rem; margin-bottom: 8px; }
+  .modal p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; }
+  .modal-detail {
+    background: var(--surface2); border-radius: var(--radius); padding: 14px;
+    margin-bottom: 20px; font-size: 0.85rem;
+  }
+  .modal-detail .row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .modal-detail .row:last-child { margin-bottom: 0; }
+  .modal-detail .label { color: var(--text-muted); }
+  .modal-detail .value { font-weight: 600; text-align: right; max-width: 60%; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .btn-cancel {
+    padding: 9px 20px; border-radius: var(--radius); border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted); cursor: pointer; font-size: 0.9rem;
+  }
+  .btn-confirm {
+    padding: 9px 20px; border-radius: var(--radius); border: none;
+    background: var(--accent-lab); color: white; cursor: pointer; font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px;
+  }
+  .stat-value { font-size: 2rem; font-weight: 700; }
+  .stat-label { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-cal { color: var(--accent-cal); }
+  .stat-warn { color: var(--warning); }
+  .stat-ok { color: var(--success); }
+
+  @media (max-width: 640px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .topbar { padding: 10px 16px; }
+    .main-content { padding: 16px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* OCR */
+  .input-with-btn { display: flex; gap: 8px; align-items: stretch; }
+  .input-with-btn input { flex: 1; }
+  .btn-camera {
+    padding: 0 14px; border-radius: var(--radius); border: 1.5px dashed var(--border);
+    background: var(--surface2); color: var(--text-muted); cursor: pointer;
+    font-size: 1.1rem; transition: all 0.2s; white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-camera:hover { border-color: var(--accent-cal); color: var(--accent-cal); }
+  .btn-camera.ready { border-color: var(--accent-cal); color: var(--accent-cal); border-style: solid; }
+  .ocr-status-bar {
+    display: none; align-items: center; gap: 10px;
+    padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-top: 8px; font-size: 0.82rem; color: var(--text-muted);
+  }
+  .ocr-spinner {
+    width: 14px; height: 14px; border: 2px solid var(--border);
+    border-top-color: var(--accent-cal); border-radius: 50%;
+    animation: spin 0.75s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .ocr-preview {
+    display: none; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; margin-top: 10px;
+  }
+  .ocr-preview img { width: 100%; max-height: 160px; object-fit: cover; display: block; border-bottom: 1px solid var(--border); }
+  .ocr-result { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .ocr-tokens { display: flex; flex-wrap: wrap; gap: 7px; }
+  .ocr-token {
+    padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
+    background: var(--surface); color: var(--text); cursor: pointer; font-size: 0.82rem;
+    font-weight: 600; font-family: monospace; letter-spacing: 0.04em; transition: all 0.15s;
+  }
+  .ocr-token:hover, .ocr-token:active { border-color: var(--accent-cal); color: var(--accent-cal); background: var(--accent-cal-dim); }
+  .ocr-hint { font-size: 0.75rem; color: var(--text-muted); }
+  .ocr-retry { background: none; border: none; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; text-decoration: underline; padding: 0; }
+
+  /* PDF MODAL */
+  .btn-pdf {
+    padding: 6px 14px; border-radius: var(--radius); border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text-muted); cursor: pointer; font-size: 0.82rem;
+    font-weight: 500; transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-pdf:hover { border-color: var(--accent-cal); color: var(--accent-cal); }
+
+  .pdf-modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 200; align-items: center; justify-content: center; padding: 20px;
+  }
+  .pdf-modal-overlay.open { display: flex; }
+  .pdf-modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 32px; max-width: 420px; width: 100%;
+  }
+  .pdf-modal h3 { font-size: 1.1rem; margin-bottom: 6px; }
+  .pdf-modal p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px; }
+  .week-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; margin-bottom: 20px; }
+  .week-item {
+    padding: 11px 14px; border-radius: var(--radius); border: 1px solid var(--border);
+    background: var(--surface2); cursor: pointer; transition: all 0.15s;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .week-item:hover { border-color: var(--accent-cal); background: var(--accent-cal-dim); }
+  .week-item.selected { border-color: var(--accent-cal); background: var(--accent-cal-dim); }
+  .week-label { font-size: 0.88rem; font-weight: 600; }
+  .week-count { font-size: 0.75rem; color: var(--text-muted); }
+  .pdf-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* PRINT STYLES */
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body > *:not(#print-area) { display: none !important; }
+    #print-area { display: block !important; }
+    @page { size: A4 landscape; margin: 12mm 10mm; }
+    html, body, #print-area, #print-area * {
+      background: #ffffff !important;
+      color: #000000 !important;
+      border-color: #999999 !important;
+    }
+  }
+  #print-area { display: none; }
+  .print-header { margin-bottom: 10px; }
+  .print-company { font-size: 9pt; color: #555; }
+  .print-title-block { border: 2px solid #000; display: grid; grid-template-columns: 1fr auto; margin-bottom: 8px; }
+  .print-title-main { padding: 8px 12px; }
+  .print-title-main h1 { font-size: 13pt; font-weight: 700; text-transform: uppercase; margin: 0; }
+  .print-title-main h2 { font-size: 10pt; font-weight: 400; margin: 2px 0 0 0; color: #333; }
+  .print-title-meta { border-left: 2px solid #000; padding: 6px 12px; font-size: 8pt; display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 160px; }
+  .print-title-meta div { display: flex; justify-content: space-between; gap: 8px; }
+  .print-title-meta span:first-child { color: #555; }
+  .print-title-meta span:last-child { font-weight: 600; }
+  .print-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+  .print-table th {
+    background: #f0f0f0; border: 1px solid #999; padding: 5px 7px;
+    text-align: left; font-size: 7.5pt; text-transform: uppercase; font-weight: 700;
+  }
+  .print-table td { border: 1px solid #bbb; padding: 5px 7px; vertical-align: top; }
+  .print-table tr:nth-child(even) td { background: #fafafa; }
+  .print-firma { font-size: 7.5pt; }
+  .print-firma .user { font-weight: 700; }
+  .print-firma .time { color: #666; }
+  .print-pending { color: #aaa; font-style: italic; font-size: 7pt; }
+  .print-lote { font-family: monospace; font-size: 8pt; }
+  .print-estado-p { color: #b45309; font-weight: 600; font-size: 7pt; }
+  .print-estado-c { color: #065f46; font-weight: 600; font-size: 7pt; }
+  .print-footer { margin-top: 10px; font-size: 7.5pt; color: #666; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div style="font-size:2rem; margin-bottom:8px;">🧪</div>
+      <h2>Entrega de Muestras</h2>
+      <h1>South Wind</h1>
+      <div class="doc-code">CAL-REG-91 · Rev.00</div>
+    </div>
+    <div class="role-selector">
+      <div class="role-btn active-cal" id="role-cal" onclick="selectRole('calidad')">
+        <div class="role-icon">👩‍🔬</div>
+        <div class="role-name">Calidad</div>
+      </div>
+      <div class="role-btn" id="role-lab" onclick="selectRole('lab')">
+        <div class="role-icon">🔬</div>
+        <div class="role-name">Laboratorio</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="Ingresa tu contraseña" onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <button class="btn-primary btn-cal" id="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div>
+        <div class="topbar-title">Entrega de Muestras a Laboratorio</div>
+        <div class="topbar-sub">CAL-REG-91 · South Wind</div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span class="role-badge" id="role-badge"></span>
+      <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- STATS -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value stat-cal" id="stat-total">-</div>
+        <div class="stat-label">Total registros</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value stat-warn" id="stat-pendiente">-</div>
+        <div class="stat-label">Pendientes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value stat-ok" id="stat-completo">-</div>
+        <div class="stat-label">Completos</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active" id="tab-registros" onclick="switchTab('registros')">Registros</div>
+      <div class="tab" id="tab-nuevo" onclick="switchTab('nuevo')" style="display:none">Nueva Entrega</div>
+    </div>
+
+    <!-- TAB: REGISTROS -->
+    <div class="tab-content active" id="content-registros">
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+          <div class="filters">
+            <button class="filter-btn active" onclick="setFilter('todos', this)">Todos</button>
+            <button class="filter-btn" onclick="setFilter('pendiente', this)">Pendientes</button>
+            <button class="filter-btn" onclick="setFilter('completo', this)">Completos</button>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input class="search-input" type="text" placeholder="Buscar lote o producto..." oninput="filterTable(this.value)">
+            <button class="btn-pdf" onclick="openPDFModal()">🖨 Exportar semana</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="records-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Producto / Formato / Cantidad</th>
+                <th>Lote SW</th>
+                <th>Lote Cliente/Prov.</th>
+                <th>ENTREGA</th>
+                <th>RECIBE</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="records-body">
+              <tr><td colspan="8" class="loading">Cargando registros...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: NUEVA ENTREGA -->
+    <div class="tab-content" id="content-nuevo">
+      <div class="card">
+        <div class="card-title">
+          <span style="color:var(--accent-cal)">📋</span>
+          Registrar Nueva Entrega
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Fecha</label>
+            <input type="date" id="f-fecha">
+          </div>
+          <div class="form-group">
+            <label>Lote South Wind</label>
+            <div class="input-with-btn">
+              <input type="text" id="f-lote-sw" placeholder="Ej: 1CM2601110Z">
+              <button class="btn-camera" onclick="initOCR()" title="Escanear lote con cámara" id="btn-camera">
+                📷
+              </button>
+            </div>
+            <div class="ocr-status-bar" id="ocrStatus" style="display:none">
+              <div class="ocr-spinner"></div>
+              <span id="ocrMsg">Cargando OCR…</span>
+            </div>
+            <div class="ocr-preview" id="ocrPreview" style="display:none">
+              <img id="ocrImg" src="" alt="captura">
+              <div class="ocr-result" id="ocrResult"></div>
+            </div>
+          </div>
+          <div class="form-group grid-full">
+            <label>Producto / Formato / Cantidad</label>
+            <textarea id="f-producto" placeholder="Ej: Salmón ahumado frío / Bolsa 200g / 3 unidades"></textarea>
+          </div>
+          <div class="form-group grid-full">
+            <label>Lote Cliente / Proveedor <span style="color:var(--text-muted)">(opcional)</span></label>
+            <input type="text" id="f-lote-cliente" placeholder="Ej: LC-98432">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-submit btn-cal" onclick="submitEntrega()" id="btn-submit">
+            <span>✓</span> Registrar y Firmar Entrega
+          </button>
+          <span class="form-msg" id="form-msg"></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR RECEPCIÓN -->
+<div class="modal-overlay" id="modal-recibir">
+  <div class="modal">
+    <h3>🔬 Confirmar Recepción</h3>
+    <p>Estás a punto de registrar la recepción de estas muestras como <strong>Laboratorio</strong>.</p>
+    <div class="modal-detail" id="modal-detail"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarRecepcion()">Confirmar Recepción</button>
+    </div>
+  </div>
+</div>
+
+<!-- OCR: input de cámara oculto (Tesseract.js) -->
+<input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────
+const SUPABASE_URL = 'https://ylqlafnuopzutaxqtdga.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlscWxhZm51b3B6dXRheHF0ZGdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwMjk1NTUsImV4cCI6MjA5MjYwNTU1NX0.AyIfGL_RKhBTZVlAvCruxLaF7o7RIb0yD1eQS8NoYH4';
+
+// Regex lote SW
+const LOTE_SW_REGEX = /[bB@]{0,2}[12][A-Z]{2}\d{4,6}[A-Z0-9]{0,3}/g;
+
+const CREDENTIALS = {
+  calidad: 'calidad2025',
+  lab: 'lab2025'
+};
+
+// ─── STATE ────────────────────────────────────────────────
+let currentRole = 'calidad';
+let currentUser = null;
+let allRecords = [];
+let currentFilter = 'todos';
+let pendingRecibirId = null;
+
+// ─── SUPABASE HELPERS ─────────────────────────────────────
+async function sbFetch(path, options = {}) {
+  const url = `${SUPABASE_URL}/rest/v1/${path}`;
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...options.headers
+  };
+  const res = await fetch(url, { ...options, headers });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+async function getRecords() {
+  return await sbFetch('entregas?order=created_at.desc');
+}
+
+async function insertRecord(data) {
+  return await sbFetch('entregas', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+async function updateRecord(id, data) {
+  return await sbFetch(`entregas?id=eq.${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+// ─── OCR (Tesseract.js lazy load) ─────────────────────────
+let tesseractReady = false;
+let tesseractLoading = false;
+let workerInstance = null;
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function showOCRStatus(msg) {
+  const el = document.getElementById('ocrStatus');
+  document.getElementById('ocrMsg').textContent = msg;
+  el.style.display = 'flex';
+}
+function hideOCRStatus() {
+  document.getElementById('ocrStatus').style.display = 'none';
+}
+
+async function initOCR() {
+  if (tesseractReady) {
+    document.getElementById('cameraInput').click();
+    return;
+  }
+  if (tesseractLoading) return;
+  tesseractLoading = true;
+  showOCRStatus('Cargando OCR por primera vez… (solo esta vez)');
+  try {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js');
+    showOCRStatus('Cargando modelo de texto…');
+    workerInstance = await Tesseract.createWorker('eng', 1, {
+      logger: m => {
+        if (m.status === 'loading tesseract core') showOCRStatus('Iniciando motor OCR…');
+        if (m.status === 'loading language traineddata') showOCRStatus('Cargando modelo de idioma…');
+        if (m.status === 'initializing api') showOCRStatus('Listo, abriendo cámara…');
+      }
+    });
+    await workerInstance.setParameters({
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@B:/ ',
+      tessedit_pageseg_mode: '6',
+    });
+    tesseractReady = true;
+    tesseractLoading = false;
+    hideOCRStatus();
+    document.getElementById('btn-camera').classList.add('ready');
+    document.getElementById('cameraInput').click();
+  } catch(e) {
+    tesseractLoading = false;
+    hideOCRStatus();
+    showOCRStatus('Error cargando OCR: ' + e.message);
+    setTimeout(hideOCRStatus, 3000);
+  }
+}
+
+async function handlePhoto(event) {
+  const file = event.target.files[0];
+  if (!file || !workerInstance) return;
+
+  const url = URL.createObjectURL(file);
+  document.getElementById('ocrImg').src = url;
+  document.getElementById('ocrPreview').style.display = 'block';
+  document.getElementById('ocrResult').innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:8px 0"><div class="ocr-spinner"></div><span style="font-size:0.8rem;color:var(--text-muted)">Leyendo texto…</span></div>';
+
+  try {
+    showOCRStatus('Reconociendo texto…');
+    const result = await workerInstance.recognize(file);
+    hideOCRStatus();
+
+    const rawText = (result.data.text || '').toUpperCase();
+
+    // Regex patrón lote SW
+    const lotRegex = /[B@]{0,2}[12][A-Z]{2}\d{4,6}[A-Z0-9]{0,3}/g;
+    let matches = [...new Set([...rawText.matchAll(lotRegex)].map(m => m[0]))];
+
+    // Priorizar si viene precedido por "LOTE:" o "OTE:"
+    const loteLineMatch = rawText.match(/L?OTE[:\s]+([B@]{0,2}[12][A-Z]{2}\d{4,6}[A-Z0-9]{0,3})/);
+    if (loteLineMatch) {
+      const fromLabel = loteLineMatch[1];
+      matches = [fromLabel, ...matches.filter(t => t !== fromLabel)];
+    }
+
+    renderOCRTokens(matches.slice(0, 6));
+  } catch(e) {
+    hideOCRStatus();
+    document.getElementById('ocrResult').innerHTML = '<div class="ocr-hint">Error al procesar. Intenta de nuevo.</div>';
+  }
+  event.target.value = '';
+}
+
+function renderOCRTokens(tokens) {
+  const div = document.getElementById('ocrResult');
+  if (tokens.length === 0) {
+    div.innerHTML = `<div class="ocr-hint">No se detectó lote. Intenta con mejor iluminación o ingresa manualmente.</div>
+      <button class="ocr-retry" onclick="document.getElementById('cameraInput').click()">📷 Reintentar</button>`;
+    return;
+  }
+  const chips = tokens.map(t => `<button class="ocr-token" onclick="usarLote('${t}')">${t}</button>`).join('');
+  div.innerHTML = `<div class="ocr-hint">Toca el lote correcto:</div>
+    <div class="ocr-tokens">${chips}</div>
+    <button class="ocr-retry" onclick="document.getElementById('cameraInput').click()">📷 Reintentar</button>`;
+}
+
+function usarLote(token) {
+  document.getElementById('f-lote-sw').value = token;
+  document.getElementById('ocrPreview').style.display = 'none';
+  document.getElementById('ocrResult').innerHTML = '';
+}
+
+// ─── AUTH ─────────────────────────────────────────────────
+function selectRole(role) {
+  currentRole = role;
+  document.getElementById('role-cal').className = 'role-btn' + (role === 'calidad' ? ' active-cal' : '');
+  document.getElementById('role-lab').className = 'role-btn' + (role === 'lab' ? ' active-lab' : '');
+  const btn = document.getElementById('login-btn');
+  btn.className = `btn-primary btn-${role === 'calidad' ? 'cal' : 'lab'}`;
+  document.getElementById('login-error').textContent = '';
+}
+
+function doLogin() {
+  const pass = document.getElementById('login-pass').value;
+  if (pass === CREDENTIALS[currentRole]) {
+    currentUser = currentRole === 'calidad' ? 'Calidad' : 'Laboratorio';
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'block';
+    setupApp();
+  } else {
+    document.getElementById('login-error').textContent = 'Contraseña incorrecta.';
+    document.getElementById('login-pass').value = '';
+  }
+}
+
+function doLogout() {
+  currentUser = null;
+  currentRole = 'calidad';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').textContent = '';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+  selectRole('calidad');
+}
+
+// ─── APP SETUP ────────────────────────────────────────────
+function setupApp() {
+  const badge = document.getElementById('role-badge');
+  badge.textContent = currentUser;
+  badge.className = `role-badge badge-${currentRole}`;
+
+  // mostrar tab nueva entrega solo para Calidad
+  const tabNuevo = document.getElementById('tab-nuevo');
+  tabNuevo.style.display = currentRole === 'calidad' ? 'block' : 'none';
+
+  // setear fecha de hoy
+  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+
+  loadRecords();
+}
+
+// ─── TABS ─────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.getElementById(`content-${tab}`).classList.add('active');
+}
+
+// ─── RECORDS ──────────────────────────────────────────────
+async function loadRecords() {
+  try {
+    allRecords = await getRecords();
+    renderStats();
+    renderTable();
+  } catch (e) {
+    document.getElementById('records-body').innerHTML =
+      `<tr><td colspan="8" style="color:var(--danger);text-align:center;padding:20px;">Error al cargar: ${e.message}</td></tr>`;
+  }
+}
+
+function renderStats() {
+  const total = allRecords.length;
+  const pendiente = allRecords.filter(r => r.estado === 'pendiente').length;
+  const completo = allRecords.filter(r => r.estado === 'completo').length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-pendiente').textContent = pendiente;
+  document.getElementById('stat-completo').textContent = completo;
+}
+
+function formatDate(iso) {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+function formatDateTime(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleString('es-CL', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
+function renderTable(records = null) {
+  const data = records || getFilteredRecords();
+  const tbody = document.getElementById('records-body');
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="8">
+      <div class="empty-state">
+        <div><i>📋</i></div>
+        <div>No hay registros</div>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map(r => {
+    const entregaCell = r.entregado_por
+      ? `<div class="firma-cell"><div class="firma-user">✓ ${r.entregado_por}</div><div class="firma-time">${formatDateTime(r.entregado_at)}</div></div>`
+      : `<div class="firma-pending">Pendiente</div>`;
+
+    const recibeCell = r.recibido_por
+      ? `<div class="firma-cell"><div class="firma-user">✓ ${r.recibido_por}</div><div class="firma-time">${formatDateTime(r.recibido_at)}</div></div>`
+      : `<div class="firma-pending">Pendiente</div>`;
+
+    const accion = (currentRole === 'lab' && r.estado === 'pendiente')
+      ? `<button class="btn-recibir" onclick="openModal('${r.id}')">Confirmar recepción</button>`
+      : '';
+
+    const estadoBadge = `<span class="status-badge status-${r.estado}">${r.estado === 'pendiente' ? 'Pendiente' : 'Completo'}</span>`;
+
+    return `<tr>
+      <td style="white-space:nowrap">${formatDate(r.fecha)}</td>
+      <td style="max-width:220px">${r.producto_formato_cantidad}</td>
+      <td><code style="font-size:0.8rem">${r.lote_sw}</code></td>
+      <td>${r.lote_cliente || '-'}</td>
+      <td>${entregaCell}</td>
+      <td>${recibeCell}</td>
+      <td>${estadoBadge}</td>
+      <td>${accion}</td>
+    </tr>`;
+  }).join('');
+}
+
+function getFilteredRecords() {
+  if (currentFilter === 'todos') return allRecords;
+  return allRecords.filter(r => r.estado === currentFilter);
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function filterTable(q) {
+  if (!q) { renderTable(); return; }
+  const lower = q.toLowerCase();
+  const filtered = allRecords.filter(r =>
+    r.lote_sw?.toLowerCase().includes(lower) ||
+    r.lote_cliente?.toLowerCase().includes(lower) ||
+    r.producto_formato_cantidad?.toLowerCase().includes(lower)
+  );
+  renderTable(filtered);
+}
+
+// ─── NUEVA ENTREGA ────────────────────────────────────────
+async function submitEntrega() {
+  const fecha = document.getElementById('f-fecha').value;
+  const producto = document.getElementById('f-producto').value.trim();
+  const loteSw = document.getElementById('f-lote-sw').value.trim();
+  const loteCliente = document.getElementById('f-lote-cliente').value.trim();
+  const msg = document.getElementById('form-msg');
+  const btn = document.getElementById('btn-submit');
+
+  if (!fecha || !producto || !loteSw) {
+    msg.className = 'form-msg err';
+    msg.textContent = 'Fecha, producto y lote SW son obligatorios.';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.className = 'form-msg';
+  msg.textContent = 'Guardando...';
+
+  try {
+    await insertRecord({
+      fecha,
+      producto_formato_cantidad: producto,
+      lote_sw: loteSw,
+      lote_cliente: loteCliente || null,
+      entregado_por: 'Calidad',
+      entregado_at: new Date().toISOString(),
+      estado: 'pendiente'
+    });
+
+    msg.className = 'form-msg ok';
+    msg.textContent = '✓ Entrega registrada correctamente.';
+
+    // limpiar form
+    document.getElementById('f-producto').value = '';
+    document.getElementById('f-lote-sw').value = '';
+    document.getElementById('f-lote-cliente').value = '';
+    document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+
+    await loadRecords();
+    setTimeout(() => { msg.textContent = ''; }, 3000);
+  } catch (e) {
+    msg.className = 'form-msg err';
+    msg.textContent = `Error: ${e.message}`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ─── MODAL RECIBIR ────────────────────────────────────────
+function openModal(id) {
+  pendingRecibirId = id;
+  const r = allRecords.find(x => x.id === id);
+  document.getElementById('modal-detail').innerHTML = `
+    <div class="row"><span class="label">Fecha</span><span class="value">${formatDate(r.fecha)}</span></div>
+    <div class="row"><span class="label">Producto</span><span class="value">${r.producto_formato_cantidad}</span></div>
+    <div class="row"><span class="label">Lote SW</span><span class="value">${r.lote_sw}</span></div>
+    <div class="row"><span class="label">Entregado por</span><span class="value">${r.entregado_por} · ${formatDateTime(r.entregado_at)}</span></div>
+  `;
+  document.getElementById('modal-recibir').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-recibir').classList.remove('open');
+  pendingRecibirId = null;
+}
+
+async function confirmarRecepcion() {
+  if (!pendingRecibirId) return;
+  const btn = document.querySelector('.btn-confirm');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  try {
+    await updateRecord(pendingRecibirId, {
+      recibido_por: 'Laboratorio',
+      recibido_at: new Date().toISOString(),
+      estado: 'completo'
+    });
+    closeModal();
+    await loadRecords();
+  } catch (e) {
+    alert(`Error al guardar: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Confirmar Recepción';
+  }
+}
+
+// ─── EXPORT PDF ───────────────────────────────────────────
+let selectedWeekKey = null;
+
+function getWeekKey(dateStr) {
+  // Retorna "YYYY-Www" para agrupar por semana ISO
+  const d = new Date(dateStr + 'T12:00:00');
+  const jan4 = new Date(d.getFullYear(), 0, 4);
+  const startOfWeek = new Date(jan4);
+  startOfWeek.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+  const weekNum = Math.ceil(((d - startOfWeek) / 86400000 + 1) / 7);
+  return `${d.getFullYear()}-W${String(weekNum).padStart(2,'0')}`;
+}
+
+function getWeekRange(weekKey) {
+  const [year, w] = weekKey.split('-W');
+  const jan4 = new Date(parseInt(year), 0, 4);
+  const monday = new Date(jan4);
+  monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7) + (parseInt(w) - 1) * 7);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return { monday, sunday };
+}
+
+function formatDateShort(d) {
+  return d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function openPDFModal() {
+  // Agrupar registros por semana
+  const weeks = {};
+  allRecords.forEach(r => {
+    if (!r.fecha) return;
+    const wk = getWeekKey(r.fecha);
+    if (!weeks[wk]) weeks[wk] = [];
+    weeks[wk].push(r);
+  });
+
+  const sorted = Object.keys(weeks).sort().reverse();
+  const list = document.getElementById('week-list');
+
+  if (sorted.length === 0) {
+    list.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:20px">Sin registros disponibles</div>';
+  } else {
+    list.innerHTML = sorted.map(wk => {
+      const { monday, sunday } = getWeekRange(wk);
+      const count = weeks[wk].length;
+      const label = `Semana ${wk.split('-W')[1]} · ${formatDateShort(monday)} – ${formatDateShort(sunday)}`;
+      return `<div class="week-item" data-wk="${wk}" onclick="selectWeek(this, '${wk}')">
+        <span class="week-label">${label}</span>
+        <span class="week-count">${count} registro${count !== 1 ? 's' : ''}</span>
+      </div>`;
+    }).join('');
+  }
+
+  selectedWeekKey = null;
+  document.getElementById('btn-print-confirm').disabled = true;
+  document.getElementById('pdf-modal-overlay').classList.add('open');
+}
+
+function selectWeek(el, wk) {
+  document.querySelectorAll('.week-item').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedWeekKey = wk;
+  document.getElementById('btn-print-confirm').disabled = false;
+}
+
+function closePDFModal() {
+  document.getElementById('pdf-modal-overlay').classList.remove('open');
+  selectedWeekKey = null;
+}
+
+function doPrint() {
+  if (!selectedWeekKey) return;
+  const weekKeyToPrint = selectedWeekKey;
+  closePDFModal();
+
+  const { monday, sunday } = getWeekRange(weekKeyToPrint);
+  const weekNum = weekKeyToPrint.split('-W')[1];
+  const year = weekKeyToPrint.split('-W')[0];
+
+  // Filtrar registros de la semana
+  const records = allRecords.filter(r => {
+    if (!r.fecha) return false;
+    return getWeekKey(r.fecha) === weekKeyToPrint;
+  }).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+  const now = new Date();
+  const printDate = now.toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const printTime = now.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' });
+
+  const rows = records.map((r, i) => {
+    const entrega = r.entregado_por
+      ? `<div class="print-firma"><div class="user">${r.entregado_por}</div><div class="time">${formatDateTime(r.entregado_at)}</div></div>`
+      : '<span class="print-pending">Pendiente</span>';
+    const recibe = r.recibido_por
+      ? `<div class="print-firma"><div class="user">${r.recibido_por}</div><div class="time">${formatDateTime(r.recibido_at)}</div></div>`
+      : '<span class="print-pending">Pendiente</span>';
+    const estado = r.estado === 'completo'
+      ? '<span class="print-estado-c">COMPLETO</span>'
+      : '<span class="print-estado-p">PENDIENTE</span>';
+    return `<tr>
+      <td style="white-space:nowrap">${formatDate(r.fecha)}</td>
+      <td>${r.producto_formato_cantidad || ''}</td>
+      <td class="print-lote">${r.lote_sw || ''}</td>
+      <td class="print-lote">${r.lote_cliente || '-'}</td>
+      <td>${entrega}</td>
+      <td>${recibe}</td>
+      <td>${estado}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('print-area').innerHTML = `
+    <div class="print-header">
+      <div class="print-company">Comercial y Pesquera South Wind S.A. &nbsp;|&nbsp; Villarrica 311, Quilicura, Santiago &nbsp;|&nbsp; Planta 13100</div>
+    </div>
+    <div class="print-title-block">
+      <div class="print-title-main">
+        <h1>Registro</h1>
+        <h2>Entrega de Muestras a Laboratorio</h2>
+      </div>
+      <div class="print-title-meta">
+        <div><span>Código&nbsp;:</span><span>CAL-REG-91</span></div>
+        <div><span>Revisión&nbsp;:</span><span>00</span></div>
+        <div><span>Semana&nbsp;:</span><span>${weekNum} / ${year}</span></div>
+        <div><span>Período&nbsp;:</span><span>${formatDateShort(monday)} – ${formatDateShort(sunday)}</span></div>
+        <div><span>Registros&nbsp;:</span><span>${records.length}</span></div>
+      </div>
+    </div>
+    <table class="print-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Producto / Formato / Cantidad</th>
+          <th>Lote (South Wind)</th>
+          <th>Lote (Cliente/Proveedor)</th>
+          <th>ENTREGA</th>
+          <th>RECIBE</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:#999">Sin registros para esta semana</td></tr>'}</tbody>
+    </table>
+    <div class="print-footer">
+      <span>Impreso el ${printDate} a las ${printTime}</span>
+      <span>CAL-REG-91 · Rev.00 · Comercial y Pesquera South Wind S.A.</span>
+    </div>
+  `;
+
+  window.print();
+}
+
+</script>
+
+<!-- MODAL EXPORTAR PDF -->
+<div class="pdf-modal-overlay" id="pdf-modal-overlay">
+  <div class="pdf-modal">
+    <h3>🖨 Exportar a PDF</h3>
+    <p>Selecciona la semana que deseas imprimir. Se generará una hoja A4 horizontal.</p>
+    <div class="week-list" id="week-list"></div>
+    <div class="pdf-actions">
+      <button class="btn-cancel" onclick="closePDFModal()">Cancelar</button>
+      <button class="btn-confirm" id="btn-print-confirm" onclick="doPrint()" disabled>Imprimir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ÁREA DE IMPRESIÓN (oculta en pantalla, visible al imprimir) -->
+<div id="print-area"></div>
+
+</body>
+</html>
