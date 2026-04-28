@@ -4,7 +4,78 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CAL-REG-91 | Entrega de Muestras a Laboratorio</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js">
+// ─── EDITAR REGISTRO ──────────────────────────────────────
+const EDIT_PASSWORD = 'serranita';
+let editingId = null;
+
+function requestEdit(id) {
+  const pass = prompt('Ingresa la clave para editar:');
+  if (pass === null) return; // canceló
+  if (pass !== EDIT_PASSWORD) {
+    alert('Clave incorrecta.');
+    return;
+  }
+  openEditModal(id);
+}
+
+function openEditModal(id) {
+  const r = allRecords.find(x => x.id === id);
+  if (!r) return;
+  editingId = id;
+  document.getElementById('edit-fecha').value = r.fecha || '';
+  document.getElementById('edit-lote-sw').value = r.lote_sw || '';
+  document.getElementById('edit-producto').value = r.producto_formato_cantidad || '';
+  document.getElementById('edit-lote-cliente').value = r.lote_cliente || '';
+  document.getElementById('edit-msg').textContent = '';
+  document.getElementById('edit-msg').style.color = '';
+  document.getElementById('btn-save-edit').disabled = false;
+  document.getElementById('edit-modal-overlay').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal-overlay').classList.remove('open');
+  editingId = null;
+}
+
+async function saveEdit() {
+  if (!editingId) return;
+  const fecha = document.getElementById('edit-fecha').value;
+  const lote_sw = document.getElementById('edit-lote-sw').value.trim();
+  const producto = document.getElementById('edit-producto').value.trim();
+  const lote_cliente = document.getElementById('edit-lote-cliente').value.trim();
+  const msg = document.getElementById('edit-msg');
+  const btn = document.getElementById('btn-save-edit');
+
+  if (!fecha || !lote_sw || !producto) {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'Fecha, lote SW y producto son obligatorios.';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.style.color = 'var(--text-muted)';
+  msg.textContent = 'Guardando…';
+
+  try {
+    await updateRecord(editingId, {
+      fecha,
+      lote_sw,
+      producto_formato_cantidad: producto,
+      lote_cliente: lote_cliente || null
+    });
+    msg.style.color = 'var(--success)';
+    msg.textContent = '✓ Guardado';
+    await loadRecords();
+    setTimeout(closeEditModal, 800);
+  } catch(e) {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'Error: ' + e.message;
+    btn.disabled = false;
+  }
+}
+
+</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -333,6 +404,20 @@
   .print-estado-p { color: #b45309; font-weight: 600; font-size: 7pt; }
   .print-estado-c { color: #065f46; font-weight: 600; font-size: 7pt; }
   .print-footer { margin-top: 10px; font-size: 7.5pt; color: #666; display: flex; justify-content: space-between; }
+
+  /* EDITAR MODAL */
+  .btn-edit {
+    padding: 5px 11px; border-radius: var(--radius); border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted); cursor: pointer;
+    font-size: 0.78rem; transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-edit:hover { border-color: #f59e0b; color: #f59e0b; }
+  .edit-modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px; max-width: 460px; width: 100%;
+  }
+  .edit-modal h3 { font-size: 1rem; margin-bottom: 6px; }
+  .edit-modal p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 18px; }
 </style>
 </head>
 <body>
@@ -786,9 +871,11 @@ function renderTable(records = null) {
       ? `<div class="firma-cell"><div class="firma-user">✓ ${r.recibido_por}</div><div class="firma-time">${formatDateTime(r.recibido_at)}</div></div>`
       : `<div class="firma-pending">Pendiente</div>`;
 
-    const accion = (currentRole === 'lab' && r.estado === 'pendiente')
+    const btnRecibir = (currentRole === 'lab' && r.estado === 'pendiente')
       ? `<button class="btn-recibir" onclick="openModal('${r.id}')">Confirmar recepción</button>`
       : '';
+    const btnEdit = `<button class="btn-edit" onclick="requestEdit('${r.id}')">✏</button>`;
+    const accion = `<div style="display:flex;gap:6px;align-items:center">${btnRecibir}${btnEdit}</div>`;
 
     const estadoBadge = `<span class="status-badge status-${r.estado}">${r.estado === 'pendiente' ? 'Pendiente' : 'Completo'}</span>`;
 
@@ -1067,6 +1154,77 @@ function doPrint() {
   window.print();
 }
 
+
+// ─── EDITAR REGISTRO ──────────────────────────────────────
+const EDIT_PASSWORD = 'serranita';
+let editingId = null;
+
+function requestEdit(id) {
+  const pass = prompt('Ingresa la clave para editar:');
+  if (pass === null) return; // canceló
+  if (pass !== EDIT_PASSWORD) {
+    alert('Clave incorrecta.');
+    return;
+  }
+  openEditModal(id);
+}
+
+function openEditModal(id) {
+  const r = allRecords.find(x => x.id === id);
+  if (!r) return;
+  editingId = id;
+  document.getElementById('edit-fecha').value = r.fecha || '';
+  document.getElementById('edit-lote-sw').value = r.lote_sw || '';
+  document.getElementById('edit-producto').value = r.producto_formato_cantidad || '';
+  document.getElementById('edit-lote-cliente').value = r.lote_cliente || '';
+  document.getElementById('edit-msg').textContent = '';
+  document.getElementById('edit-msg').style.color = '';
+  document.getElementById('btn-save-edit').disabled = false;
+  document.getElementById('edit-modal-overlay').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal-overlay').classList.remove('open');
+  editingId = null;
+}
+
+async function saveEdit() {
+  if (!editingId) return;
+  const fecha = document.getElementById('edit-fecha').value;
+  const lote_sw = document.getElementById('edit-lote-sw').value.trim();
+  const producto = document.getElementById('edit-producto').value.trim();
+  const lote_cliente = document.getElementById('edit-lote-cliente').value.trim();
+  const msg = document.getElementById('edit-msg');
+  const btn = document.getElementById('btn-save-edit');
+
+  if (!fecha || !lote_sw || !producto) {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'Fecha, lote SW y producto son obligatorios.';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.style.color = 'var(--text-muted)';
+  msg.textContent = 'Guardando…';
+
+  try {
+    await updateRecord(editingId, {
+      fecha,
+      lote_sw,
+      producto_formato_cantidad: producto,
+      lote_cliente: lote_cliente || null
+    });
+    msg.style.color = 'var(--success)';
+    msg.textContent = '✓ Guardado';
+    await loadRecords();
+    setTimeout(closeEditModal, 800);
+  } catch(e) {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'Error: ' + e.message;
+    btn.disabled = false;
+  }
+}
+
 </script>
 
 <!-- MODAL EXPORTAR PDF -->
@@ -1084,6 +1242,38 @@ function doPrint() {
 
 <!-- ÁREA DE IMPRESIÓN (oculta en pantalla, visible al imprimir) -->
 <div id="print-area"></div>
+
+
+<!-- MODAL EDITAR REGISTRO -->
+<div class="modal-overlay" id="edit-modal-overlay">
+  <div class="edit-modal">
+    <h3>✏ Editar Registro</h3>
+    <p>Solo se pueden modificar los datos del registro, no las firmas.</p>
+    <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" id="edit-fecha">
+      </div>
+      <div class="form-group">
+        <label>Lote South Wind</label>
+        <input type="text" id="edit-lote-sw">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Producto / Formato / Cantidad</label>
+        <textarea id="edit-producto" style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:0.9rem;resize:vertical;min-height:70px;font-family:inherit"></textarea>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Lote Cliente / Proveedor</label>
+        <input type="text" id="edit-lote-cliente">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;align-items:center">
+      <span id="edit-msg" style="font-size:0.82rem"></span>
+      <button class="btn-cancel" onclick="closeEditModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="saveEdit()" id="btn-save-edit" style="background:#f59e0b">Guardar cambios</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
