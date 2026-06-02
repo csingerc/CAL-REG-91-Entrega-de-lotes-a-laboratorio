@@ -4,78 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CAL-REG-91 | Entrega de Muestras a Laboratorio</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js">
-// ─── EDITAR REGISTRO ──────────────────────────────────────
-const EDIT_PASSWORD = 'serranita';
-let editingId = null;
-
-function requestEdit(id) {
-  const pass = prompt('Ingresa la clave para editar:');
-  if (pass === null) return; // canceló
-  if (pass !== EDIT_PASSWORD) {
-    alert('Clave incorrecta.');
-    return;
-  }
-  openEditModal(id);
-}
-
-function openEditModal(id) {
-  const r = allRecords.find(x => x.id === id);
-  if (!r) return;
-  editingId = id;
-  document.getElementById('edit-fecha').value = r.fecha || '';
-  document.getElementById('edit-lote-sw').value = r.lote_sw || '';
-  document.getElementById('edit-producto').value = r.producto_formato_cantidad || '';
-  document.getElementById('edit-lote-cliente').value = r.lote_cliente || '';
-  document.getElementById('edit-msg').textContent = '';
-  document.getElementById('edit-msg').style.color = '';
-  document.getElementById('btn-save-edit').disabled = false;
-  document.getElementById('edit-modal-overlay').classList.add('open');
-}
-
-function closeEditModal() {
-  document.getElementById('edit-modal-overlay').classList.remove('open');
-  editingId = null;
-}
-
-async function saveEdit() {
-  if (!editingId) return;
-  const fecha = document.getElementById('edit-fecha').value;
-  const lote_sw = document.getElementById('edit-lote-sw').value.trim();
-  const producto = document.getElementById('edit-producto').value.trim();
-  const lote_cliente = document.getElementById('edit-lote-cliente').value.trim();
-  const msg = document.getElementById('edit-msg');
-  const btn = document.getElementById('btn-save-edit');
-
-  if (!fecha || !lote_sw || !producto) {
-    msg.style.color = 'var(--danger)';
-    msg.textContent = 'Fecha, lote SW y producto son obligatorios.';
-    return;
-  }
-
-  btn.disabled = true;
-  msg.style.color = 'var(--text-muted)';
-  msg.textContent = 'Guardando…';
-
-  try {
-    await updateRecord(editingId, {
-      fecha,
-      lote_sw,
-      producto_formato_cantidad: producto,
-      lote_cliente: lote_cliente || null
-    });
-    msg.style.color = 'var(--success)';
-    msg.textContent = '✓ Guardado';
-    await loadRecords();
-    setTimeout(closeEditModal, 800);
-  } catch(e) {
-    msg.style.color = 'var(--danger)';
-    msg.textContent = 'Error: ' + e.message;
-    btn.disabled = false;
-  }
-}
-
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -95,7 +24,6 @@ async function saveEdit() {
     --radius: 10px;
   }
   body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
-
   /* LOGIN */
   #login-screen {
     display: flex; align-items: center; justify-content: center;
@@ -136,7 +64,6 @@ async function saveEdit() {
   .btn-lab { background: var(--accent-lab); color: white; }
   .btn-lab:hover { background: #059669; }
   .login-error { color: var(--danger); font-size: 0.85rem; text-align: center; margin-top: 10px; min-height: 20px; }
-
   /* APP */
   #app-screen { display: none; min-height: 100vh; }
   .topbar {
@@ -159,9 +86,7 @@ async function saveEdit() {
     transition: all 0.2s;
   }
   .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
-
   .main-content { padding: 24px; max-width: 1200px; margin: 0 auto; }
-
   /* TABS */
   .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
   .tab {
@@ -172,7 +97,6 @@ async function saveEdit() {
   .tab.active { color: var(--text); border-bottom-color: var(--accent-cal); }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
-
   /* FORM NUEVA ENTREGA */
   .card {
     background: var(--surface); border: 1px solid var(--border);
@@ -198,7 +122,6 @@ async function saveEdit() {
   .form-msg { font-size: 0.85rem; }
   .form-msg.ok { color: var(--success); }
   .form-msg.err { color: var(--danger); }
-
   /* TABLA REGISTROS */
   .filters { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
   .filter-btn {
@@ -212,7 +135,6 @@ async function saveEdit() {
     border-radius: 20px; color: var(--text); font-size: 0.85rem; width: 220px;
   }
   .search-input:focus { outline: none; border-color: var(--accent-cal); }
-
   .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
   th {
@@ -223,30 +145,25 @@ async function saveEdit() {
   td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
   tr:hover td { background: var(--surface2); }
   tr:last-child td { border-bottom: none; }
-
   .status-badge {
     padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600;
     white-space: nowrap;
   }
   .status-pendiente { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
   .status-completo { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
-
   .firma-cell { font-size: 0.8rem; }
   .firma-user { font-weight: 600; color: var(--text); }
   .firma-time { color: var(--text-muted); font-size: 0.72rem; margin-top: 2px; }
   .firma-pending { color: var(--text-muted); font-style: italic; }
-
   .btn-recibir {
     padding: 6px 14px; border-radius: var(--radius); border: 1px solid var(--accent-lab);
     background: var(--accent-lab-dim); color: var(--accent-lab); cursor: pointer;
     font-size: 0.8rem; font-weight: 600; transition: all 0.2s; white-space: nowrap;
   }
   .btn-recibir:hover { background: var(--accent-lab); color: white; }
-
   .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
   .empty-state i { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.4; }
   .loading { text-align: center; padding: 40px; color: var(--text-muted); }
-
   /* MODAL CONFIRMACIÓN */
   .modal-overlay {
     display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
@@ -277,7 +194,6 @@ async function saveEdit() {
     background: var(--accent-lab); color: white; cursor: pointer; font-size: 0.9rem;
     font-weight: 600;
   }
-
   /* STATS */
   .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
   .stat-card {
@@ -289,14 +205,12 @@ async function saveEdit() {
   .stat-cal { color: var(--accent-cal); }
   .stat-warn { color: var(--warning); }
   .stat-ok { color: var(--success); }
-
   @media (max-width: 640px) {
     .grid-2 { grid-template-columns: 1fr; }
     .topbar { padding: 10px 16px; }
     .main-content { padding: 16px; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
   }
-
   /* OCR */
   .input-with-btn { display: flex; gap: 8px; align-items: stretch; }
   .input-with-btn input { flex: 1; }
@@ -334,7 +248,6 @@ async function saveEdit() {
   .ocr-token:hover, .ocr-token:active { border-color: var(--accent-cal); color: var(--accent-cal); background: var(--accent-cal-dim); }
   .ocr-hint { font-size: 0.75rem; color: var(--text-muted); }
   .ocr-retry { background: none; border: none; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; text-decoration: underline; padding: 0; }
-
   /* PDF MODAL */
   .btn-pdf {
     padding: 6px 14px; border-radius: var(--radius); border: 1px solid var(--border);
@@ -342,7 +255,6 @@ async function saveEdit() {
     font-weight: 500; transition: all 0.2s; white-space: nowrap;
   }
   .btn-pdf:hover { border-color: var(--accent-cal); color: var(--accent-cal); }
-
   .pdf-modal-overlay {
     display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
     z-index: 200; align-items: center; justify-content: center; padding: 20px;
@@ -365,7 +277,6 @@ async function saveEdit() {
   .week-label { font-size: 0.88rem; font-weight: 600; }
   .week-count { font-size: 0.75rem; color: var(--text-muted); }
   .pdf-actions { display: flex; gap: 10px; justify-content: flex-end; }
-
   /* PRINT STYLES */
   @media print {
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -404,7 +315,6 @@ async function saveEdit() {
   .print-estado-p { color: #b45309; font-weight: 600; font-size: 7pt; }
   .print-estado-c { color: #065f46; font-weight: 600; font-size: 7pt; }
   .print-footer { margin-top: 10px; font-size: 7.5pt; color: #666; display: flex; justify-content: space-between; }
-
   /* EDITAR MODAL */
   .btn-edit {
     padding: 5px 11px; border-radius: var(--radius); border: 1px solid var(--border);
@@ -421,7 +331,6 @@ async function saveEdit() {
 </style>
 </head>
 <body>
-
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
@@ -449,7 +358,6 @@ async function saveEdit() {
     <div class="login-error" id="login-error"></div>
   </div>
 </div>
-
 <!-- APP -->
 <div id="app-screen">
   <div class="topbar">
@@ -464,9 +372,7 @@ async function saveEdit() {
       <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
     </div>
   </div>
-
   <div class="main-content">
-
     <!-- STATS -->
     <div class="stats-grid" id="stats-grid">
       <div class="stat-card">
@@ -482,13 +388,11 @@ async function saveEdit() {
         <div class="stat-label">Completos</div>
       </div>
     </div>
-
     <!-- TABS -->
     <div class="tabs">
       <div class="tab active" id="tab-registros" onclick="switchTab('registros')">Registros</div>
       <div class="tab" id="tab-nuevo" onclick="switchTab('nuevo')" style="display:none">Nueva Entrega</div>
     </div>
-
     <!-- TAB: REGISTROS -->
     <div class="tab-content active" id="content-registros">
       <div class="card">
@@ -524,7 +428,6 @@ async function saveEdit() {
         </div>
       </div>
     </div>
-
     <!-- TAB: NUEVA ENTREGA -->
     <div class="tab-content" id="content-nuevo">
       <div class="card">
@@ -571,10 +474,8 @@ async function saveEdit() {
         </div>
       </div>
     </div>
-
   </div>
 </div>
-
 <!-- MODAL CONFIRMAR RECEPCIÓN -->
 <div class="modal-overlay" id="modal-recibir">
   <div class="modal">
@@ -587,29 +488,33 @@ async function saveEdit() {
     </div>
   </div>
 </div>
-
 <!-- OCR: input de cámara oculto (Tesseract.js) -->
 <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
-
 <script>
 // ─── CONFIG ───────────────────────────────────────────────
 const SUPABASE_URL = 'https://ylqlafnuopzutaxqtdga.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlscWxhZm51b3B6dXRheHF0ZGdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwMjk1NTUsImV4cCI6MjA5MjYwNTU1NX0.AyIfGL_RKhBTZVlAvCruxLaF7o7RIb0yD1eQS8NoYH4';
-
-// Regex lote SW
-const LOTE_SW_REGEX = /[bB@]{0,2}[12][A-Z]{2}\d{4,6}[A-Z0-9]{0,3}/g;
-
 const CREDENTIALS = {
   calidad: 'calidad2025',
   lab: 'lab2025'
 };
-
 // ─── STATE ────────────────────────────────────────────────
 let currentRole = 'calidad';
 let currentUser = null;
 let allRecords = [];
 let currentFilter = 'todos';
 let pendingRecibirId = null;
+
+// ─── FIX TIMEZONE: fecha local YYYY-MM-DD ─────────────────
+// new Date().toISOString() devuelve UTC → en Chile (UTC-4/UTC-3)
+// eso muestra el día anterior. Usamos valores locales directamente.
+function todayLocal() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 // ─── SUPABASE HELPERS ─────────────────────────────────────
 async function sbFetch(path, options = {}) {
@@ -629,30 +534,25 @@ async function sbFetch(path, options = {}) {
   const text = await res.text();
   return text ? JSON.parse(text) : [];
 }
-
 async function getRecords() {
   return await sbFetch('entregas?order=created_at.desc');
 }
-
 async function insertRecord(data) {
   return await sbFetch('entregas', {
     method: 'POST',
     body: JSON.stringify(data)
   });
 }
-
 async function updateRecord(id, data) {
   return await sbFetch(`entregas?id=eq.${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data)
   });
 }
-
 // ─── OCR (Tesseract.js lazy load) ─────────────────────────
 let tesseractReady = false;
 let tesseractLoading = false;
 let workerInstance = null;
-
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
@@ -661,7 +561,6 @@ function loadScript(src) {
     document.head.appendChild(s);
   });
 }
-
 function showOCRStatus(msg) {
   const el = document.getElementById('ocrStatus');
   document.getElementById('ocrMsg').textContent = msg;
@@ -670,7 +569,6 @@ function showOCRStatus(msg) {
 function hideOCRStatus() {
   document.getElementById('ocrStatus').style.display = 'none';
 }
-
 async function initOCR() {
   if (tesseractReady) {
     document.getElementById('cameraInput').click();
@@ -705,34 +603,25 @@ async function initOCR() {
     setTimeout(hideOCRStatus, 3000);
   }
 }
-
 async function handlePhoto(event) {
   const file = event.target.files[0];
   if (!file || !workerInstance) return;
-
   const url = URL.createObjectURL(file);
   document.getElementById('ocrImg').src = url;
   document.getElementById('ocrPreview').style.display = 'block';
   document.getElementById('ocrResult').innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:8px 0"><div class="ocr-spinner"></div><span style="font-size:0.8rem;color:var(--text-muted)">Leyendo texto…</span></div>';
-
   try {
     showOCRStatus('Reconociendo texto…');
     const result = await workerInstance.recognize(file);
     hideOCRStatus();
-
     const rawText = (result.data.text || '').toUpperCase();
-
-    // Regex patrón lote SW
     const lotRegex = /[B@]{0,2}[12][A-Z]{2}\d{4,6}[A-Z0-9]{0,3}/g;
     let matches = [...new Set([...rawText.matchAll(lotRegex)].map(m => m[0]))];
-
-    // Priorizar si viene precedido por "LOTE:" o "OTE:"
     const loteLineMatch = rawText.match(/L?OTE[:\s]+([B@]{0,2}[12][A-Z]{2}\d{4,6}[A-Z0-9]{0,3})/);
     if (loteLineMatch) {
       const fromLabel = loteLineMatch[1];
       matches = [fromLabel, ...matches.filter(t => t !== fromLabel)];
     }
-
     renderOCRTokens(matches.slice(0, 6));
   } catch(e) {
     hideOCRStatus();
@@ -740,7 +629,6 @@ async function handlePhoto(event) {
   }
   event.target.value = '';
 }
-
 function renderOCRTokens(tokens) {
   const div = document.getElementById('ocrResult');
   if (tokens.length === 0) {
@@ -753,13 +641,11 @@ function renderOCRTokens(tokens) {
     <div class="ocr-tokens">${chips}</div>
     <button class="ocr-retry" onclick="document.getElementById('cameraInput').click()">📷 Reintentar</button>`;
 }
-
 function usarLote(token) {
   document.getElementById('f-lote-sw').value = token;
   document.getElementById('ocrPreview').style.display = 'none';
   document.getElementById('ocrResult').innerHTML = '';
 }
-
 // ─── AUTH ─────────────────────────────────────────────────
 function selectRole(role) {
   currentRole = role;
@@ -769,7 +655,6 @@ function selectRole(role) {
   btn.className = `btn-primary btn-${role === 'calidad' ? 'cal' : 'lab'}`;
   document.getElementById('login-error').textContent = '';
 }
-
 function doLogin() {
   const pass = document.getElementById('login-pass').value;
   if (pass === CREDENTIALS[currentRole]) {
@@ -782,7 +667,6 @@ function doLogin() {
     document.getElementById('login-pass').value = '';
   }
 }
-
 function doLogout() {
   currentUser = null;
   currentRole = 'calidad';
@@ -792,23 +676,17 @@ function doLogout() {
   document.getElementById('app-screen').style.display = 'none';
   selectRole('calidad');
 }
-
 // ─── APP SETUP ────────────────────────────────────────────
 function setupApp() {
   const badge = document.getElementById('role-badge');
   badge.textContent = currentUser;
   badge.className = `role-badge badge-${currentRole}`;
-
-  // mostrar tab nueva entrega solo para Calidad
   const tabNuevo = document.getElementById('tab-nuevo');
   tabNuevo.style.display = currentRole === 'calidad' ? 'block' : 'none';
-
-  // setear fecha de hoy
-  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
-
+  // FIX: usar fecha local, no UTC
+  document.getElementById('f-fecha').value = todayLocal();
   loadRecords();
 }
-
 // ─── TABS ─────────────────────────────────────────────────
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -816,7 +694,6 @@ function switchTab(tab) {
   document.getElementById(`tab-${tab}`).classList.add('active');
   document.getElementById(`content-${tab}`).classList.add('active');
 }
-
 // ─── RECORDS ──────────────────────────────────────────────
 async function loadRecords() {
   try {
@@ -828,7 +705,6 @@ async function loadRecords() {
       `<tr><td colspan="8" style="color:var(--danger);text-align:center;padding:20px;">Error al cargar: ${e.message}</td></tr>`;
   }
 }
-
 function renderStats() {
   const total = allRecords.length;
   const pendiente = allRecords.filter(r => r.estado === 'pendiente').length;
@@ -838,20 +714,22 @@ function renderStats() {
   document.getElementById('stat-completo').textContent = completo;
 }
 
+// FIX: parsear fecha date-only como LOCAL, no UTC.
+// new Date("2026-06-02") → UTC midnight → en Chile muestra 01/06.
+// new Date(y, m-1, d) → medianoche local → muestra el día correcto.
 function formatDate(iso) {
   if (!iso) return '-';
-  return new Date(iso).toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
 }
 
 function formatDateTime(iso) {
   if (!iso) return '';
   return new Date(iso).toLocaleString('es-CL', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
 }
-
 function renderTable(records = null) {
   const data = records || getFilteredRecords();
   const tbody = document.getElementById('records-body');
-
   if (!data.length) {
     tbody.innerHTML = `<tr><td colspan="8">
       <div class="empty-state">
@@ -861,24 +739,19 @@ function renderTable(records = null) {
     </td></tr>`;
     return;
   }
-
   tbody.innerHTML = data.map(r => {
     const entregaCell = r.entregado_por
       ? `<div class="firma-cell"><div class="firma-user">✓ ${r.entregado_por}</div><div class="firma-time">${formatDateTime(r.entregado_at)}</div></div>`
       : `<div class="firma-pending">Pendiente</div>`;
-
     const recibeCell = r.recibido_por
       ? `<div class="firma-cell"><div class="firma-user">✓ ${r.recibido_por}</div><div class="firma-time">${formatDateTime(r.recibido_at)}</div></div>`
       : `<div class="firma-pending">Pendiente</div>`;
-
     const btnRecibir = (currentRole === 'lab' && r.estado === 'pendiente')
       ? `<button class="btn-recibir" onclick="openModal('${r.id}')">Confirmar recepción</button>`
       : '';
     const btnEdit = `<button class="btn-edit" onclick="requestEdit('${r.id}')">✏</button>`;
     const accion = `<div style="display:flex;gap:6px;align-items:center">${btnRecibir}${btnEdit}</div>`;
-
     const estadoBadge = `<span class="status-badge status-${r.estado}">${r.estado === 'pendiente' ? 'Pendiente' : 'Completo'}</span>`;
-
     return `<tr>
       <td style="white-space:nowrap">${formatDate(r.fecha)}</td>
       <td style="max-width:220px">${r.producto_formato_cantidad}</td>
@@ -891,19 +764,16 @@ function renderTable(records = null) {
     </tr>`;
   }).join('');
 }
-
 function getFilteredRecords() {
   if (currentFilter === 'todos') return allRecords;
   return allRecords.filter(r => r.estado === currentFilter);
 }
-
 function setFilter(f, btn) {
   currentFilter = f;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderTable();
 }
-
 function filterTable(q) {
   if (!q) { renderTable(); return; }
   const lower = q.toLowerCase();
@@ -914,7 +784,6 @@ function filterTable(q) {
   );
   renderTable(filtered);
 }
-
 // ─── NUEVA ENTREGA ────────────────────────────────────────
 async function submitEntrega() {
   const fecha = document.getElementById('f-fecha').value;
@@ -923,17 +792,14 @@ async function submitEntrega() {
   const loteCliente = document.getElementById('f-lote-cliente').value.trim();
   const msg = document.getElementById('form-msg');
   const btn = document.getElementById('btn-submit');
-
   if (!fecha || !producto || !loteSw) {
     msg.className = 'form-msg err';
     msg.textContent = 'Fecha, producto y lote SW son obligatorios.';
     return;
   }
-
   btn.disabled = true;
   msg.className = 'form-msg';
   msg.textContent = 'Guardando...';
-
   try {
     await insertRecord({
       fecha,
@@ -944,16 +810,13 @@ async function submitEntrega() {
       entregado_at: new Date().toISOString(),
       estado: 'pendiente'
     });
-
     msg.className = 'form-msg ok';
     msg.textContent = '✓ Entrega registrada correctamente.';
-
-    // limpiar form
     document.getElementById('f-producto').value = '';
     document.getElementById('f-lote-sw').value = '';
     document.getElementById('f-lote-cliente').value = '';
-    document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
-
+    // FIX: usar fecha local, no UTC
+    document.getElementById('f-fecha').value = todayLocal();
     await loadRecords();
     setTimeout(() => { msg.textContent = ''; }, 3000);
   } catch (e) {
@@ -963,7 +826,6 @@ async function submitEntrega() {
     btn.disabled = false;
   }
 }
-
 // ─── MODAL RECIBIR ────────────────────────────────────────
 function openModal(id) {
   pendingRecibirId = id;
@@ -976,12 +838,10 @@ function openModal(id) {
   `;
   document.getElementById('modal-recibir').classList.add('open');
 }
-
 function closeModal() {
   document.getElementById('modal-recibir').classList.remove('open');
   pendingRecibirId = null;
 }
-
 async function confirmarRecepcion() {
   if (!pendingRecibirId) return;
   const btn = document.querySelector('.btn-confirm');
@@ -1002,12 +862,9 @@ async function confirmarRecepcion() {
     btn.textContent = 'Confirmar Recepción';
   }
 }
-
 // ─── EXPORT PDF ───────────────────────────────────────────
 let selectedWeekKey = null;
-
 function getWeekKey(dateStr) {
-  // Retorna "YYYY-Www" para agrupar por semana ISO
   const d = new Date(dateStr + 'T12:00:00');
   const jan4 = new Date(d.getFullYear(), 0, 4);
   const startOfWeek = new Date(jan4);
@@ -1015,7 +872,6 @@ function getWeekKey(dateStr) {
   const weekNum = Math.ceil(((d - startOfWeek) / 86400000 + 1) / 7);
   return `${d.getFullYear()}-W${String(weekNum).padStart(2,'0')}`;
 }
-
 function getWeekRange(weekKey) {
   const [year, w] = weekKey.split('-W');
   const jan4 = new Date(parseInt(year), 0, 4);
@@ -1025,13 +881,10 @@ function getWeekRange(weekKey) {
   sunday.setDate(monday.getDate() + 6);
   return { monday, sunday };
 }
-
 function formatDateShort(d) {
   return d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
-
 function openPDFModal() {
-  // Agrupar registros por semana
   const weeks = {};
   allRecords.forEach(r => {
     if (!r.fecha) return;
@@ -1039,10 +892,8 @@ function openPDFModal() {
     if (!weeks[wk]) weeks[wk] = [];
     weeks[wk].push(r);
   });
-
   const sorted = Object.keys(weeks).sort().reverse();
   const list = document.getElementById('week-list');
-
   if (sorted.length === 0) {
     list.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:20px">Sin registros disponibles</div>';
   } else {
@@ -1056,43 +907,34 @@ function openPDFModal() {
       </div>`;
     }).join('');
   }
-
   selectedWeekKey = null;
   document.getElementById('btn-print-confirm').disabled = true;
   document.getElementById('pdf-modal-overlay').classList.add('open');
 }
-
 function selectWeek(el, wk) {
   document.querySelectorAll('.week-item').forEach(i => i.classList.remove('selected'));
   el.classList.add('selected');
   selectedWeekKey = wk;
   document.getElementById('btn-print-confirm').disabled = false;
 }
-
 function closePDFModal() {
   document.getElementById('pdf-modal-overlay').classList.remove('open');
   selectedWeekKey = null;
 }
-
 function doPrint() {
   if (!selectedWeekKey) return;
   const weekKeyToPrint = selectedWeekKey;
   closePDFModal();
-
   const { monday, sunday } = getWeekRange(weekKeyToPrint);
   const weekNum = weekKeyToPrint.split('-W')[1];
   const year = weekKeyToPrint.split('-W')[0];
-
-  // Filtrar registros de la semana
   const records = allRecords.filter(r => {
     if (!r.fecha) return false;
     return getWeekKey(r.fecha) === weekKeyToPrint;
   }).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-
   const now = new Date();
   const printDate = now.toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
   const printTime = now.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' });
-
   const rows = records.map((r, i) => {
     const entrega = r.entregado_por
       ? `<div class="print-firma"><div class="user">${r.entregado_por}</div><div class="time">${formatDateTime(r.entregado_at)}</div></div>`
@@ -1113,7 +955,6 @@ function doPrint() {
       <td>${estado}</td>
     </tr>`;
   }).join('');
-
   document.getElementById('print-area').innerHTML = `
     <div class="print-header">
       <div class="print-company">Comercial y Pesquera South Wind S.A. &nbsp;|&nbsp; Villarrica 311, Quilicura, Santiago &nbsp;|&nbsp; Planta 13100</div>
@@ -1150,25 +991,20 @@ function doPrint() {
       <span>CAL-REG-91 · Rev.00 · Comercial y Pesquera South Wind S.A.</span>
     </div>
   `;
-
   window.print();
 }
-
-
 // ─── EDITAR REGISTRO ──────────────────────────────────────
 const EDIT_PASSWORD = 'serranita';
 let editingId = null;
-
 function requestEdit(id) {
   const pass = prompt('Ingresa la clave para editar:');
-  if (pass === null) return; // canceló
+  if (pass === null) return;
   if (pass !== EDIT_PASSWORD) {
     alert('Clave incorrecta.');
     return;
   }
   openEditModal(id);
 }
-
 function openEditModal(id) {
   const r = allRecords.find(x => x.id === id);
   if (!r) return;
@@ -1182,12 +1018,10 @@ function openEditModal(id) {
   document.getElementById('btn-save-edit').disabled = false;
   document.getElementById('edit-modal-overlay').classList.add('open');
 }
-
 function closeEditModal() {
   document.getElementById('edit-modal-overlay').classList.remove('open');
   editingId = null;
 }
-
 async function saveEdit() {
   if (!editingId) return;
   const fecha = document.getElementById('edit-fecha').value;
@@ -1196,17 +1030,14 @@ async function saveEdit() {
   const lote_cliente = document.getElementById('edit-lote-cliente').value.trim();
   const msg = document.getElementById('edit-msg');
   const btn = document.getElementById('btn-save-edit');
-
   if (!fecha || !lote_sw || !producto) {
     msg.style.color = 'var(--danger)';
     msg.textContent = 'Fecha, lote SW y producto son obligatorios.';
     return;
   }
-
   btn.disabled = true;
   msg.style.color = 'var(--text-muted)';
   msg.textContent = 'Guardando…';
-
   try {
     await updateRecord(editingId, {
       fecha,
@@ -1224,9 +1055,7 @@ async function saveEdit() {
     btn.disabled = false;
   }
 }
-
 </script>
-
 <!-- MODAL EXPORTAR PDF -->
 <div class="pdf-modal-overlay" id="pdf-modal-overlay">
   <div class="pdf-modal">
@@ -1239,11 +1068,8 @@ async function saveEdit() {
     </div>
   </div>
 </div>
-
 <!-- ÁREA DE IMPRESIÓN (oculta en pantalla, visible al imprimir) -->
 <div id="print-area"></div>
-
-
 <!-- MODAL EDITAR REGISTRO -->
 <div class="modal-overlay" id="edit-modal-overlay">
   <div class="edit-modal">
@@ -1274,6 +1100,5 @@ async function saveEdit() {
     </div>
   </div>
 </div>
-
 </body>
 </html>
